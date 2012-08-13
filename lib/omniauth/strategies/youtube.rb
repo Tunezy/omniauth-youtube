@@ -47,7 +47,7 @@ module OmniAuth
       end
 
       def user_info
-        @raw_info ||= @access_token.get('https://www.googleapis.com/oauth2/v1/userinfo').parsed
+        @raw_info ||= {} # @access_token.get('https://www.googleapis.com/oauth2/v1/userinfo').parsed
       end
 
       private

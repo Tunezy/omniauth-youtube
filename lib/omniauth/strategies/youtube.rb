@@ -14,7 +14,9 @@ module OmniAuth
       }
 
       option :authorize_params, {
-        :scope => 'http://gdata.youtube.com'
+        :scope => 'http://gdata.youtube.com',
+        :access_type => 'offline',
+        :approval_prompt => ''
       }
 
       uid { user['id']['$t'] }

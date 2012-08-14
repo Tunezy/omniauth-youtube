@@ -5,6 +5,8 @@ module OmniAuth
   module Strategies
     class YouTube < OmniAuth::Strategies::OAuth2
 
+      DEFAULT_SCOPE = "http://gdata.youtube.com"
+
       option :name, 'youtube'
 
       option :client_options, {
@@ -12,12 +14,25 @@ module OmniAuth
         :authorize_url => 'https://accounts.google.com/o/oauth2/auth',
         :token_url => 'https://accounts.google.com/o/oauth2/token'
       }
-
-      option :authorize_params, {
-        :scope => 'http://gdata.youtube.com',
-        :access_type => 'offline',
-        :approval_prompt => ''
-      }
+      
+      def authorize_params
+        base_scope_url = "https://www.googleapis.com/auth/"
+        super.tap do |params|
+          # Read the params if passed directly to omniauth_authorize_path
+          %w(scope approval_prompt access_type state hd).each do |k|
+            params[k.to_sym] = request.params[k] unless [nil, ''].include?(request.params[k])
+          end
+          scopes = (params[:scope] || DEFAULT_SCOPE).split(",")
+          scopes.map! { |s| s =~ /^https?:\/\// ? s : "#{base_scope_url}#{s}" }
+          params[:scope] = scopes.join(' ')
+          # This makes sure we get a refresh_token.
+          # http://googlecode.blogspot.com/2011/10/upcoming-changes-to-oauth-20-endpoint.html
+          params[:access_type] = 'offline' if params[:access_type].nil?
+          params[:approval_prompt] = 'force' if params[:approval_prompt].nil?
+          # Override the state per request
+          session['omniauth.state'] = params[:state] if request.params['state']
+        end
+      end
 
       uid { user['id']['$t'] }
 
